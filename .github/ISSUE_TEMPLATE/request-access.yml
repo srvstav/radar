@@ -1,0 +1,31 @@
+name: Request early access
+description: Get on the radar private beta.
+title: "Access: "
+labels: ["access-request"]
+body:
+  - type: markdown
+    attributes:
+      value: "This issue is **public**. Don't share private info. We'll reply here when your spot opens."
+  - type: dropdown
+    id: role
+    attributes:
+      label: What do you do?
+      options: ["ML / AI engineer", "Researcher", "Founder / builder", "Robotics / physical AI", "Student", "Other"]
+    validations: { required: true }
+  - type: textarea
+    id: watch
+    attributes:
+      label: What should radar never let you miss?
+      placeholder: "e.g. new open world models, robot learning papers with code, agent tooling"
+    validations: { required: true }
+  - type: dropdown
+    id: today
+    attributes:
+      label: How do you keep up today?
+      options: ["X / Twitter", "Hacker News", "Reddit", "Newsletters", "Papers / arXiv", "I don't, and it hurts"]
+      multiple: true
+  - type: dropdown
+    id: pay
+    attributes:
+      label: Would you pay for this?
+      options: ["Yes, monthly", "Yes, if my team gets it", "Maybe, after trying it", "No"]

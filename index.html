@@ -1,0 +1,475 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<title>radar</title>
+<meta name="radar-mode" content="demo">
+<meta property="og:title" content="radar — the AI frontier, read for you">
+<meta property="og:description" content="What to try today from everything the AI frontier shipped.">
+<meta property="og:image" content="https://srvstav.github.io/radar/assets/hero.png">
+<meta name="description" content="radar reads the AI frontier every ten minutes and tells you what to try today.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,200;9..144,400;9..144,800;9..144,900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --color-paper: #f2ede3;
+  --color-paper-deep: #e8e1d3;
+  --color-card: #fbf8f2;
+  --color-ink: #16130f;
+  --color-ink-soft: #5d554a;
+  --color-rule: #16130f;
+  --color-hair: #d8d0c0;
+  --color-signal: #e0401f;
+  --color-signal-ink: #fff4ee;
+  --color-ok: #2f7d4f;
+  --color-media: #1f1b16;
+  --font-display: "Fraunces", Georgia, serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+  --radius: 4px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --color-paper: #14120f; --color-paper-deep: #1b1814; --color-card: #1e1b17; --color-ink: #efe8db;
+    --color-ink-soft: #9c9384; --color-rule: #efe8db; --color-hair: #322d27;
+    --color-signal: #ff5a36; --color-signal-ink: #1a0a05; --color-ok: #5fbf85; --color-media: #0c0b09;
+  }
+}
+:root[data-theme="dark"] {
+  --color-paper: #14120f; --color-paper-deep: #1b1814; --color-card: #1e1b17; --color-ink: #efe8db;
+  --color-ink-soft: #9c9384; --color-rule: #efe8db; --color-hair: #322d27;
+  --color-signal: #ff5a36; --color-signal-ink: #1a0a05; --color-ok: #5fbf85; --color-media: #0c0b09;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  background: var(--color-paper); color: var(--color-ink); overflow-x: hidden;
+  font: 400 16px/1.4 var(--font-display); -webkit-font-smoothing: antialiased;
+}
+a { color: inherit; text-decoration: none; }
+.mono { font-family: var(--font-mono); font-size: 11px; letter-spacing: .03em; }
+button {
+  font: 700 11px var(--font-mono); text-transform: uppercase; letter-spacing: .08em; cursor: pointer;
+  background: var(--color-ink); color: var(--color-paper); border: 0; padding: 9px 13px; border-radius: var(--radius);
+  transition: background .15s ease, transform .15s ease;
+}
+button:hover { background: var(--color-signal); color: var(--color-signal-ink); }
+button:disabled { opacity: .5; cursor: wait; }
+button.ghost { background: transparent; color: var(--color-ink); box-shadow: inset 0 0 0 1px var(--color-ink); }
+
+/* ---------- masthead: slim, so media gets the room ---------- */
+header { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; padding: 14px clamp(16px, 3vw, 40px); }
+.brand { font-weight: 900; font-size: clamp(40px, 5vw, 64px); line-height: .9; letter-spacing: -.045em; margin: 0; }
+.brand span { color: var(--color-signal); }
+.status { display: flex; gap: 8px; align-items: center; color: var(--color-ink-soft); }
+.spacer { flex: 1; }
+input[type=search] {
+  font: 400 13px var(--font-mono); background: transparent; color: var(--color-ink); min-width: 0;
+  border: 0; border-bottom: 1px solid var(--color-ink); padding: 7px 2px; width: 220px; outline: none;
+}
+input[type=search]:focus { border-bottom-color: var(--color-signal); }
+.pulse { width: 9px; height: 9px; border-radius: 50%; background: var(--color-ok); display: inline-block; }
+.pulse.live { background: var(--color-signal); animation: beat 1s ease-in-out infinite; }
+@keyframes beat { 50% { transform: scale(1.6); opacity: .45; } }
+
+.strip { border-top: 3px solid var(--color-rule); border-bottom: 1px solid var(--color-rule); background: var(--color-paper-deep);
+  display: flex; overflow-x: auto; scrollbar-width: none; }
+.strip::-webkit-scrollbar { display: none; }
+.src { padding: 8px 13px; white-space: nowrap; border-right: 1px solid var(--color-hair); display: flex; gap: 7px; cursor: pointer; user-select: none; }
+.src b { font-weight: 700; }
+.src .n { color: var(--color-ink-soft); }
+.src.err b { color: var(--color-signal); text-decoration: line-through; }
+.src.off { opacity: .35; }
+
+/* ---------- shared media ---------- */
+.media { position: relative; background: var(--color-media); overflow: hidden; display: block; }
+.media img, .media video, .media iframe { display: block; width: 100%; height: 100%; object-fit: cover; border: 0; }
+.media .play { position: absolute; inset: 0; display: grid; place-items: center; background: linear-gradient(transparent 55%, rgb(0 0 0 / .45)); cursor: pointer; }
+.media .play i { width: 64px; height: 64px; border-radius: 50%; background: var(--color-signal); display: grid; place-items: center; transition: transform .2s ease; }
+.media .play i::after { content: ""; border-left: 20px solid var(--color-signal-ink); border-top: 12px solid transparent; border-bottom: 12px solid transparent; margin-left: 5px; }
+.media:hover .play i { transform: scale(1.08); }
+.media .tag { position: absolute; top: 10px; left: 10px; font: 700 10.5px var(--font-mono); letter-spacing: .12em; text-transform: uppercase;
+  background: var(--color-signal); color: var(--color-signal-ink); padding: 4px 8px; border-radius: 2px; }
+.media .tag.r { left: auto; right: 10px; background: rgb(0 0 0 / .65); color: #fff; letter-spacing: .03em; text-transform: none; }
+.media .vid { position: absolute; bottom: 10px; right: 10px; font: 700 10px var(--font-mono); background: rgb(0 0 0 / .65); color: #fff; padding: 3px 6px; border-radius: 2px; }
+.noimg { display: grid; place-items: end start; padding: 16px; background:
+  repeating-linear-gradient(135deg, var(--color-paper-deep) 0 10px, var(--color-card) 10px 20px); }
+.noimg span { font: 900 46px/0.9 var(--font-display); letter-spacing: -.04em; color: var(--color-ink-soft); opacity: .5; }
+
+/* ---------- today ---------- */
+.today { padding: 22px clamp(16px, 3vw, 40px) 26px; }
+.sec-h { display: flex; align-items: baseline; gap: 14px; margin: 0 0 14px; flex-wrap: wrap; }
+.sec-h h2 { font: 900 clamp(28px, 3.4vw, 44px)/1 var(--font-display); letter-spacing: -.03em; margin: 0; }
+.sec-h em { font-style: italic; font-weight: 200; font-size: 18px; color: var(--color-ink-soft); }
+.picks { display: grid; grid-template-columns: 1.6fr 1fr 1fr; grid-auto-rows: auto; gap: 16px; }
+.pick { background: var(--color-card); border-radius: var(--radius); overflow: hidden; display: flex; flex-direction: column;
+  box-shadow: 0 1px 0 var(--color-hair), 0 10px 30px -18px rgb(0 0 0 / .35); transition: transform .2s ease, box-shadow .2s ease; }
+.pick:hover { transform: translateY(-3px); box-shadow: 0 1px 0 var(--color-hair), 0 18px 40px -18px rgb(0 0 0 / .45); }
+.pick .media { aspect-ratio: 16 / 9; }
+.pick:first-child { grid-row: span 2; }
+.pick:first-child .media { aspect-ratio: 4 / 3; }
+.pick .body { padding: 12px 14px 14px; display: flex; flex-direction: column; gap: 9px; flex: 1; }
+.ptitle { font: 800 19px/1.15 var(--font-display); letter-spacing: -.012em; margin: 0;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.pick:first-child .ptitle { font-size: clamp(24px, 2.4vw, 32px); font-weight: 900; -webkit-line-clamp: 3; }
+.ptitle a:hover { color: var(--color-signal); }
+.step { display: flex; background: var(--color-ink); color: var(--color-paper); border-radius: var(--radius); overflow: hidden; margin-top: auto; }
+.step code { font: 400 12px/1.5 var(--font-mono); padding: 8px 10px; overflow-x: auto; white-space: pre; flex: 1; min-width: 0; scrollbar-width: none; }
+.step button { border-radius: 0; background: var(--color-signal); color: var(--color-signal-ink); flex: none; }
+.prow { display: flex; gap: 10px; align-items: center; color: var(--color-ink-soft); }
+.tick { margin-left: auto; background: transparent; color: var(--color-ink-soft); box-shadow: inset 0 0 0 1px var(--color-hair); padding: 3px 8px; }
+.done { opacity: .45; }
+.done .ptitle { text-decoration: line-through; }
+
+/* "now possible" caption — the one line of text that earns its place */
+.cap { font-size: 14.5px; line-height: 1.35; margin: 0; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.cap b { font: 700 9.5px var(--font-mono); letter-spacing: .14em; text-transform: uppercase; color: var(--color-signal); margin-right: 6px; }
+.cap.first b { background: var(--color-signal); color: var(--color-signal-ink); padding: 2px 5px; border-radius: 2px; }
+.cap.weak { color: var(--color-ink-soft); }
+.cap.weak b { color: var(--color-ink-soft); }
+
+/* ---------- feed: masonry of post cards ---------- */
+.feed { padding: 8px clamp(16px, 3vw, 40px) 80px; border-top: 3px solid var(--color-rule); }
+.tabs { display: flex; gap: 6px; flex-wrap: wrap; padding: 16px 0 18px; align-items: center; }
+.tabs button { background: transparent; color: var(--color-ink); box-shadow: inset 0 0 0 1px var(--color-hair); }
+.tabs button[aria-pressed="true"] { background: var(--color-ink); color: var(--color-paper); box-shadow: none; }
+.tabs .count { margin-left: auto; color: var(--color-ink-soft); }
+.wall { columns: 4 300px; column-gap: 16px; }
+.post { break-inside: avoid; margin: 0 0 16px; background: var(--color-card); border-radius: var(--radius); overflow: hidden;
+  box-shadow: 0 1px 0 var(--color-hair); transition: box-shadow .2s ease, transform .2s ease; }
+.post:hover { box-shadow: 0 1px 0 var(--color-hair), 0 14px 34px -20px rgb(0 0 0 / .5); transform: translateY(-2px); }
+.post .head { display: flex; align-items: center; gap: 9px; padding: 11px 12px 8px; }
+.avatar { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; flex: none;
+  font: 700 11px var(--font-mono); color: #fff; text-transform: uppercase; }
+.who { line-height: 1.15; min-width: 0; }
+.who b { font: 700 12px var(--font-mono); display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.who span { color: var(--color-ink-soft); }
+.score { margin-left: auto; font: 700 13px var(--font-mono); padding: 3px 7px; border-radius: 2px; box-shadow: inset 0 0 0 1px var(--color-hair); }
+.score.hot { background: var(--color-signal); color: var(--color-signal-ink); box-shadow: none; }
+.post .t { font: 800 17px/1.2 var(--font-display); letter-spacing: -.01em; margin: 0 12px 10px; padding: 0;
+  display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.post .t a:hover { color: var(--color-signal); }
+.post .media { max-height: 460px; }
+.post .media.short { aspect-ratio: 16 / 9; }
+.post .cap, .post .sum { padding: 10px 12px 0; }
+.post .sum { color: var(--color-ink-soft); font-size: 14px; margin: 0; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.post .foot { display: flex; gap: 6px 12px; flex-wrap: wrap; padding: 10px 12px 12px; color: var(--color-ink-soft); }
+.post .foot a:hover { color: var(--color-signal); }
+.reacts { list-style: none; margin: 0; padding: 0 12px 4px; }
+.reacts li { font-size: 13px; padding: 5px 0 5px 10px; border-left: 2px solid var(--color-signal); margin-top: 6px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.empty { color: var(--color-ink-soft); font-style: italic; padding: 12px 0; }
+.pitch { padding: 34px clamp(16px, 3vw, 40px) 30px; display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: 32px; border-bottom: 3px solid var(--color-rule); }
+.pitch h2 { font: 900 clamp(40px, 6vw, 84px)/0.92 var(--font-display); letter-spacing: -.04em; margin: 0; }
+.pitch h2 em { color: var(--color-signal); font-style: normal; }
+.pitch p { font-size: 19px; max-width: 46ch; margin: 18px 0 22px; }
+.cta { display: flex; gap: 10px; flex-wrap: wrap; }
+.cta a { font: 700 12px var(--font-mono); text-transform: uppercase; letter-spacing: .08em; padding: 13px 16px; border-radius: var(--radius); background: var(--color-signal); color: var(--color-signal-ink); }
+.cta a.ghost { background: transparent; color: var(--color-ink); box-shadow: inset 0 0 0 1px var(--color-ink); }
+.how { list-style: none; margin: 0; padding: 0; counter-reset: h; }
+.how li { counter-increment: h; padding: 12px 0 12px 52px; border-top: 1px solid var(--color-hair); position: relative; font-size: 15px; }
+.how li::before { content: "0" counter(h); position: absolute; left: 0; top: 8px; font: 200 32px/1 var(--font-display); color: var(--color-signal); }
+.how b { display: block; font-weight: 800; font-size: 17px; }
+.fine { color: var(--color-ink-soft); }
+@media (max-width: 900px) { .pitch { grid-template-columns: minmax(0, 1fr); } }
+footer { padding: 0 clamp(16px, 3vw, 40px) 40px; color: var(--color-ink-soft); }
+.reveal { animation: rise .4s ease both; }
+@keyframes rise { from { opacity: 0; transform: translateY(8px); } }
+
+@media (max-width: 1000px) { .picks { grid-template-columns: 1fr 1fr; } .pick:first-child { grid-column: span 2; grid-row: auto; } }
+@media (max-width: 640px) {
+  .picks { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; gap: 12px; margin: 0 -16px; padding: 0 16px 6px; scrollbar-width: none; }
+  .picks::-webkit-scrollbar { display: none; }
+  .pick, .pick:first-child { flex: 0 0 86%; scroll-snap-align: start; }
+  .pick:first-child .media { aspect-ratio: 16 / 9; }
+  input[type=search] { flex: 1 1 140px; width: auto; }
+  .spacer { display: none; }
+}
+</style>
+</head>
+<body>
+<header>
+  <h1 class="brand">radar<span>.</span></h1>
+  <div class="status mono"><span id="pulse" class="pulse"></span><span id="status">connecting…</span></div>
+  <div class="spacer"></div>
+  <input id="q" type="search" placeholder="filter: world model, robot…" aria-label="Filter">
+  <button id="refresh" title="Run every source now">Run now</button>
+  <button id="theme" class="ghost" title="Toggle theme" aria-label="Toggle theme">◐</button>
+</header>
+<section class="pitch" id="pitch" hidden>
+  <div>
+    <h2>The AI frontier, <em>read for you.</em></h2>
+    <p>radar watches the labs, the papers, the repos and the crowd every ten minutes. It finds what is genuinely new and gives you the few things to try today, with the first command ready to copy.</p>
+    <div class="cta"><a id="cta" href="https://github.com/srvstav/radar/issues/new?template=request-access.yml">Request early access →</a><a class="ghost" href="#today-h">See today's demo ↓</a></div>
+    <p class="mono fine">Private beta · hosted platform, not open source · below is a real snapshot, not a mockup</p>
+  </div>
+  <ol class="how">
+    <li><b>Everything at once</b>15+ sources fetched in parallel. One story, however many places it shows up.</li>
+    <li><b>Firsts, not hype</b>Finds the line where a release says what it made possible, and labels it First, Now possible, or just Claims.</li>
+    <li><b>The unexpected lane</b>New names, off-topic spikes, and the papers nobody has upvoted yet.</li>
+    <li><b>Today, not a feed</b>Things to try, read and watch, each with a first step.</li>
+  </ol>
+</section>
+<nav class="strip mono" id="strip" aria-label="Sources"></nav>
+
+<section class="today">
+  <div class="sec-h"><h2 id="today-h">Today</h2><em id="today-date"></em></div>
+  <div class="picks" id="picks"></div>
+</section>
+
+<section class="feed">
+  <div class="tabs" role="tablist" id="tabs">
+    <button data-tab="top" aria-pressed="true">Top</button>
+    <button data-tab="first" aria-pressed="false">First ever</button>
+    <button data-tab="wild" aria-pressed="false">Wildcards</button>
+    <button data-tab="over" aria-pressed="false">Overlooked</button>
+    <span class="count mono" id="count"></span>
+  </div>
+  <div class="wall" id="wall"></div>
+</section>
+<footer class="mono" id="foot"></footer>
+<footer class="mono fine" id="legal" hidden>Content and images belong to their owners; radar links to the original. © 2026 radar. All rights reserved.</footer>
+
+<script>
+"use strict";
+const $ = (id) => document.getElementById(id);
+// Demo mode: static snapshot for the public site — no server, images straight from their source.
+const DEMO = document.querySelector('meta[name="radar-mode"]')?.content === "demo";
+const imgSrc = (u) => (DEMO ? u : `/img?u=${encodeURIComponent(u)}`);
+const store = {
+  get(k, d) { try { return JSON.parse(localStorage.getItem(k)) ?? d; } catch { return d; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} },
+};
+const state = { data: null, off: new Set(store.get("radar.off", [])), q: "", tab: store.get("radar.tab", "top") };
+
+// All content comes from the open internet: build DOM with textContent, allow only http(s) links
+// and https media. Never innerHTML with data.
+function el(tag, cls, text) {
+  const n = document.createElement(tag);
+  if (cls) n.className = cls;
+  if (text != null) n.textContent = text;
+  return n;
+}
+function safeUrl(u, httpsOnly = false) {
+  try { const x = new URL(u); return x.protocol === "https:" || (!httpsOnly && x.protocol === "http:") ? x.href : null; }
+  catch { return null; }
+}
+function link(url, text) {
+  const href = safeUrl(url), a = el(href ? "a" : "span", null, text);
+  if (href) { a.href = href; a.target = "_blank"; a.rel = "noopener noreferrer"; }
+  return a;
+}
+function ago(iso) {
+  const h = (Date.now() - new Date(iso).getTime()) / 36e5;
+  return h < 1 ? `${Math.max(1, Math.round(h * 60))}m` : h < 48 ? `${Math.round(h)}h` : `${Math.round(h / 24)}d`;
+}
+function ytId(u) {
+  try { const x = new URL(u);
+    if (x.hostname.endsWith("youtube.com")) return x.searchParams.get("v");
+    if (x.hostname === "youtu.be") return x.pathname.slice(1);
+  } catch {} return null;
+}
+const PALETTE = ["#e0401f", "#16130f", "#2f6f8f", "#7a5c2e", "#2f7d4f", "#8a3b6b", "#4a4a9a", "#b06a10"];
+function avatar(name) {
+  let h = 0; for (const c of name) h = (h * 31 + c.charCodeAt(0)) >>> 0;
+  const a = el("div", "avatar", name.replace(/^r\//, "").slice(0, 2));
+  a.style.background = PALETTE[h % PALETTE.length];
+  return a;
+}
+
+// ---------- media: image, autoplaying clip, or click-to-play YouTube ----------
+const io = "IntersectionObserver" in window ? new IntersectionObserver((entries) => {
+  for (const e of entries) e.isIntersecting ? e.target.play().catch(() => {}) : e.target.pause();
+}, { threshold: 0.4 }) : null;
+
+function mediaBox({ url, image, video, title }, cls = "") {
+  const box = el("div", "media " + cls);
+  const yt = ytId(url);
+  const vid = safeUrl(video, true), img = safeUrl(image, true);
+  if (vid) {
+    const v = el("video"); v.muted = true; v.loop = true; v.playsInline = true; v.preload = "metadata";
+    v.src = vid; if (img) v.poster = imgSrc(img);
+    v.onerror = () => box.replaceWith(placeholder(title, cls));
+    io ? io.observe(v) : (v.autoplay = true);
+    box.append(v, el("span", "vid", "▶ CLIP"));
+  } else if (img) {
+    const i = el("img"); i.src = imgSrc(img); i.alt = ""; i.loading = "lazy"; i.decoding = "async"; i.referrerPolicy = "no-referrer";
+    i.onerror = () => box.replaceWith(placeholder(title, cls));
+    box.append(i);
+  } else return placeholder(title, cls);
+  if (yt) {
+    const play = el("div", "play"); play.append(el("i")); play.title = "Play here";
+    play.onclick = (ev) => {
+      ev.preventDefault();
+      const f = el("iframe");
+      f.src = `https://www.youtube-nocookie.com/embed/${encodeURIComponent(yt)}?autoplay=1&rel=0`;
+      f.allow = "autoplay; encrypted-media; picture-in-picture"; f.allowFullscreen = true; f.style.aspectRatio = "16/9";
+      box.replaceChildren(f);
+    };
+    box.append(play);
+  }
+  return box;
+}
+function placeholder(title, cls) {
+  const box = el("div", "media noimg " + cls); box.style.aspectRatio = "16 / 9";
+  box.append(el("span", null, (title || "?").replace(/[^\p{L}\p{N} ]/gu, "").split(/\s+/).slice(0, 2).join(" ")));
+  return box;
+}
+
+// Label claims by strength: a first ≠ an enabler ≠ a benchmark bump.
+function caption(text, strength) {
+  if (!text || strength < 1.5) return null;
+  const [cls, lbl] = strength >= 3 ? ["cap first", "First"] : strength >= 2 ? ["cap", "Now possible"] : ["cap weak", "Claims"];
+  const p = el("p", cls); p.append(el("b", null, lbl), document.createTextNode(text));
+  return p;
+}
+
+// ---------- today ----------
+const doneKey = () => `radar.done.${new Date().toISOString().slice(0, 10)}`;
+function pickCard(p, n, done) {
+  const card = el("article", "pick reveal" + (done.has(p.url) ? " done" : ""));
+  card.style.animationDelay = `${n * 60}ms`;
+  const m = mediaBox(p);
+  m.append(el("span", "tag", `${n + 1} · ${p.verb}`));
+  if (p.traction) m.append(el("span", "tag r", p.traction));
+  const mlink = link(p.url, ""); mlink.append(m); card.append(ytId(p.url) ? m : mlink);
+  const body = el("div", "body");
+  const h = el("h3", "ptitle"); h.append(link(p.url, p.title)); body.append(h);
+  const cap = caption(p.unlock, p.unlock_strength); if (cap) body.append(cap);
+  const row = el("div", "prow mono"); row.append(el("span", null, p.effort));
+  const tick = el("button", "tick", done.has(p.url) ? "undo" : "done");
+  tick.onclick = () => { const d = new Set(store.get(doneKey(), [])); d.has(p.url) ? d.delete(p.url) : d.add(p.url); store.set(doneKey(), [...d]); renderToday(); };
+  row.append(tick); body.append(row);
+  const step = el("div", "step"), code = el("code", null, p.first_step), copy = el("button", null, "copy");
+  copy.onclick = async () => { try { await navigator.clipboard.writeText(p.first_step); copy.textContent = "copied"; } catch { copy.textContent = "select"; }
+    setTimeout(() => (copy.textContent = "copy"), 1400); };
+  step.append(code, copy); body.append(step);
+  card.append(body);
+  return card;
+}
+function renderToday() {
+  const picks = state.data?.today || [];
+  $("today-date").textContent = new Date().toLocaleDateString(undefined, { weekday: "long", month: "short", day: "numeric" })
+    + " — start with these, everything else can wait";
+  const done = new Set(store.get(doneKey(), []));
+  $("picks").replaceChildren(...(picks.length ? picks.map((p, i) => pickCard(p, i, done))
+    : [el("p", "empty", state.data ? "Nothing usable surfaced yet — next run in a few minutes." : "First run in progress…")]));
+}
+
+// ---------- feed ----------
+function visible(s) {
+  if (s.sources.every((src) => state.off.has(src))) return false;
+  if (!state.q) return true;
+  const hay = [s.items.map((i) => i.title + " " + i.summary).join(" "), s.unlock, s.judgement?.why].join(" ").toLowerCase();
+  return state.q.split(/\s+/).every((w) => hay.includes(w));
+}
+function postCard(s, n) {
+  const lead = s.items[0];
+  const card = el("article", "post reveal"); card.style.animationDelay = `${Math.min(n, 16) * 20}ms`;
+  const head = el("div", "head");
+  const who = el("div", "who"); who.append(el("b", null, lead.source), el("span", "mono", `${ago(s.first_seen)} ago`
+    + (s.sources.length > 1 ? ` · seen in ${s.sources.length} places` : "")));
+  const metric = state.tab === "wild" ? s.surprise : state.tab === "over" ? s.overlooked : s.score;
+  head.append(avatar(lead.source), who, el("span", "score" + (metric >= 7 ? " hot" : ""), metric.toFixed(1)));
+  card.append(head);
+  const t = el("h3", "t"); t.append(link(lead.url, lead.title)); card.append(t);
+
+  const hasMedia = s.image || s.video;
+  if (hasMedia) {
+    const m = mediaBox({ url: lead.url, image: s.image, video: s.video, title: lead.title }, ytId(lead.url) ? "short" : "");
+    if (ytId(lead.url)) card.append(m); else { const a = link(lead.url, ""); a.append(m); card.append(a); }
+  }
+  const cap = caption(s.judgement?.unlocks || s.unlock, s.unlock_strength);
+  if (cap) card.append(cap);
+  else if (!hasMedia) { const sum = s.items.find((i) => i.summary)?.summary; if (sum) card.append(el("p", "sum", sum)); }
+
+  if (s.reactions?.length) {
+    const ul = el("ul", "reacts");
+    for (const r of s.reactions.slice(0, 2)) { const li = el("li"); li.append(link(r.url, `↳ ${r.title}`)); ul.append(li); }
+    card.append(ul);
+  }
+  const foot = el("div", "foot mono");
+  if (s.judgement) foot.append(el("span", null, s.judgement.category));
+  if (s.surprise >= 5 && state.tab !== "wild") foot.append(el("span", null, `surprise ${s.surprise.toFixed(1)}`));
+  const disc = s.items.find((i) => i.discussion_url); if (disc) foot.append(link(disc.discussion_url, "discussion ↗"));
+  if (s.sources.length > 1) foot.append(el("span", null, s.sources.join(" · ")));
+  if (foot.childNodes.length) card.append(foot);
+  return card;
+}
+function feedSet() {
+  const d = state.data, byKey = new Map(d.stories.map((s) => [s.key, s]));
+  switch (state.tab) {
+    case "first": return d.stories.filter((s) => s.unlock_strength >= 3 || s.judgement?.first);
+    case "wild": return d.wildcards.map((k) => byKey.get(k)).filter(Boolean);
+    case "over": return d.overlooked.map((k) => byKey.get(k)).filter(Boolean);
+    default: return d.stories;
+  }
+}
+function renderFeed() {
+  for (const b of $("tabs").querySelectorAll("button")) b.setAttribute("aria-pressed", String(b.dataset.tab === state.tab));
+  if (!state.data?.stories) { $("wall").replaceChildren(); return; }
+  const all = feedSet().filter(visible), shown = all.slice(0, 60);
+  $("count").textContent = `${shown.length} of ${all.length}`;
+  const empty = state.tab === "over" && !state.data.judged ? "Needs the judge — set ANTHROPIC_API_KEY." : "Nothing here right now.";
+  $("wall").replaceChildren(...(shown.length ? shown.map(postCard) : [el("p", "empty", empty)]));
+}
+
+function renderStrip() {
+  const strip = $("strip"); strip.replaceChildren();
+  const counts = {};
+  for (const s of state.data?.stories || []) for (const i of s.items) counts[i.source] = (counts[i.source] || 0) + 1;
+  for (const r of state.data?.sources || []) {
+    const labels = Object.keys(counts).filter((l) => l === r.name || (r.name === "reddit" && l.startsWith("r/")) || (r.name === "arxiv" && l.startsWith("arxiv")));
+    for (const name of labels.length ? labels : [r.name]) {
+      const chip = el("div", "src" + (r.error ? " err" : "") + (state.off.has(name) ? " off" : ""));
+      chip.title = r.error ? r.error : `${r.seconds.toFixed(1)}s · click to hide/show`;
+      chip.append(el("b", null, name), el("span", "n", r.error ? "down" : String(counts[name] || 0)));
+      chip.onclick = () => { state.off.has(name) ? state.off.delete(name) : state.off.add(name); store.set("radar.off", [...state.off]); render(); };
+      strip.append(chip);
+    }
+  }
+}
+function render() {
+  renderToday(); renderFeed(); renderStrip();
+  const d = state.data; if (!d?.sources) return;
+  $("foot").textContent = `generated ${new Date(d.generated).toLocaleString()} · ${d.sources.filter((r) => !r.error).length}/${d.sources.length} sources · `
+    + (d.judged ? "judged by Claude" : "heuristic ranking (no judge)");
+}
+
+async function loadLatest() {
+  try {
+    const d = await (await fetch(DEMO ? "data/today.json" : "/api/latest", { cache: "no-store" })).json();
+    if (d.generated !== state.data?.generated) { state.data = d.generated ? d : null; render(); }
+  } catch {}
+}
+let wasRunning = false;
+async function poll() {
+  if (DEMO) { $("status").textContent = state.data ? `snapshot · ${new Date(state.data.generated).toLocaleString()}` : "loading…"; return; }
+  try {
+    const s = await (await fetch("/api/status", { cache: "no-store" })).json();
+    $("pulse").className = "pulse" + (s.running ? " live" : "");
+    $("refresh").disabled = s.running;
+    const next = s.next_run ? Math.max(0, Math.round((new Date(s.next_run) - Date.now()) / 60000)) : null;
+    $("status").textContent = s.running ? "fetching every source…" : s.error ? `last run failed: ${s.error}` : `next run in ${next ?? "?"}m`;
+    if (wasRunning && !s.running) loadLatest();
+    wasRunning = s.running;
+  } catch { $("status").textContent = "server offline"; }
+}
+$("refresh").onclick = async () => { $("refresh").disabled = true; await fetch("/api/refresh", { method: "POST" }); poll(); };
+$("q").oninput = (e) => { state.q = e.target.value.trim().toLowerCase(); renderFeed(); };
+$("tabs").onclick = (e) => { const t = e.target.closest("button")?.dataset.tab; if (t) { state.tab = t; store.set("radar.tab", t); renderFeed(); } };
+$("theme").onclick = () => {
+  const root = document.documentElement;
+  const dark = root.dataset.theme ? root.dataset.theme === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
+  root.dataset.theme = dark ? "light" : "dark"; store.set("radar.theme", root.dataset.theme);
+};
+{ const t = store.get("radar.theme", null); if (t) document.documentElement.dataset.theme = t; }
+
+if (DEMO) { $("pitch").hidden = false; $("legal").hidden = false; $("refresh").hidden = true; }
+render(); loadLatest().then(poll); poll();
+if (!DEMO) { setInterval(poll, 2500); setInterval(loadLatest, 60000); }
+</script>
+</body>
+</html>
