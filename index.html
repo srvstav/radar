@@ -224,7 +224,7 @@ footer.legal { grid-column: 1 / -1; color: var(--color-ink-3); font-size: 13px; 
           </div>
           <input class="field" id="key" type="password" autocomplete="off" placeholder="Paste API key (optional if already set)" aria-label="API key">
           <button class="btn small" type="submit">Use this model</button>
-          <p class="note" id="key-note">The key stays in radar's memory on this computer. It is never saved to disk and is gone when radar stops.</p>
+          <p class="note" id="key-note">Saved in your Mac's Keychain, never in a file. Sent only to the provider you pick.</p>
           <p class="ok-msg" id="model-out" hidden></p>
         </form>
       </div>
@@ -558,7 +558,8 @@ $("model-form").onsubmit = async (e) => {
   try {
     const r = await fetch("/api/settings", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(key ? { provider, key } : { provider }) });
     if (!r.ok) throw new Error();
-    $("key").value = ""; out.textContent = `Switched to ${PNAME[provider]}. Re-checking now.`;
+    const j = await r.json();
+    $("key").value = ""; out.textContent = `Switched to ${PNAME[provider]}${j.saved ? " and saved it" : " for this session"}. Re-checking now.`;
     loadSettings(); poll();
   } catch { out.textContent = "That key doesn't look right (no spaces or quotes, at least 16 characters)."; }
 };

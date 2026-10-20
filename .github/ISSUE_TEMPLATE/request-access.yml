@@ -29,3 +29,8 @@ body:
     attributes:
       label: Would you pay for this?
       options: ["Yes, monthly", "Yes, if my team gets it", "Maybe, after trying it", "No"]
+  - type: dropdown
+    id: model
+    attributes:
+      label: Which AI model key would you use with radar?
+      options: ["Anthropic (Claude)", "OpenAI", "Google Gemini (free key)", "None, I want it to just work", "Not sure"]
